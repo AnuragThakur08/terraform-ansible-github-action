@@ -1,0 +1,83 @@
+name: Terraform + Ansible CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # 3. Install Ansible
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      # 4. Configure AWS credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 5. Terraform Init
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      # 6. Terraform Validate (good practice)
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      # 7. Terraform Apply
+      - name: Terraform Apply
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve \
+          -var="key_name=${{ secrets.EC2_KEY_PAIR_NAME }}"
+
+      # 8. Get EC2 Public IP
+      - name: Fetch Public IP
+        id: tf_output
+        working-directory: terraform
+        run: |
+          IP=$(terraform output -raw public_ip)
+          echo "EC2_IP=$IP" >> $GITHUB_ENV
+
+      # 9. Save private key
+      - name: Save SSH Key
+        run: |
+          echo "${{ secrets.PRIVATE_KEY }}" > key.pem
+          chmod 400 key.pem
+
+      # 10. Create Ansible inventory dynamically
+      - name: Create Inventory
+        run: |
+          echo "[web]" > inventory.ini
+          echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=key.pem" >> inventory.ini
+
+      # 11. Wait for EC2 to be ready
+      - name: Wait for EC2
+        run: sleep 60
+
+      # 12. Run Ansible Playbook
+      - name: Run Ansible
+        run: |
+          ansible-playbook -i inventory.ini ansible/playbook.yml
