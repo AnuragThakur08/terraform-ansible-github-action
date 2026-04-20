@@ -60,9 +60,7 @@ jobs:
         id: tf_output
         working-directory: terraform
         run: |
-          IP=$(terraform output -raw public_ip)
-          echo "EC2_IP=$IP" >> $GITHUB_ENV
-
+          terraform output -json public_ips > ips.json
       # 9. Save private key
       - name: Save SSH Key
         run: |

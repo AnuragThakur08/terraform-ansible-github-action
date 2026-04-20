@@ -64,6 +64,7 @@ ingress {
 # EC2 Instance
 resource "aws_instance" "web" {
   ami           = data.aws_ami.ubuntu.id
+  count.        = 10
   instance_type = "t3.micro"
   key_name      = var.key_name
 
