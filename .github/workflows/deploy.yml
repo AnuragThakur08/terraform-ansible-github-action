@@ -81,7 +81,7 @@ jobs:
 
       # 12. Run Ansible Playbook
       - name: Run Ansible
-        ENV:
+        env:
          ANSIBLE_CONFIG: ansible/ansible.cfg
         run: |
           ansible-playbook -i inventory.ini ansible/playbook.yml
