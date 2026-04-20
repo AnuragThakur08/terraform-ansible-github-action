@@ -41,7 +41,7 @@ jobs:
       # 5. Terraform Init
       - name: Terraform Init
         working-directory: terraform
-        run: terraform init
+        run: terraform init -reconfigure
 
       # 6. Terraform Validate (good practice)
       - name: Terraform Validate
