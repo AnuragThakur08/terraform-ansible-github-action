@@ -71,7 +71,9 @@ jobs:
       - name: Create Inventory
         run: |
           echo "[web]" > inventory.ini
-          echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=key.pem" >> inventory.ini
+          for ip in $(jq -r '.[]' terraform/ips.json); do
+           echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=key.pem" >> inventory.ini
+          done
 
       # 11. Wait for EC2 to be ready
       - name: Wait for EC2
