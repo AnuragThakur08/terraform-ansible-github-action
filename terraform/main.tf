@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket         = "anurag-terraform-state-bucket"
+    key            = "terraform/terraform.tfstate"
+    region         = "ap-south-1"
+    dynamodb_table = "terraform-lock"
+  }
+}
 # Fetch latest Ubuntu AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
