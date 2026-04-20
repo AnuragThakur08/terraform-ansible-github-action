@@ -11,7 +11,7 @@ data "aws_ami" "ubuntu" {
 
 # Security Group
 resource "aws_security_group" "web_sg" {
-  name = "web-sg"
+  name_prefix = "web-sg-"
 
   ingress {
     description = "SSH"
