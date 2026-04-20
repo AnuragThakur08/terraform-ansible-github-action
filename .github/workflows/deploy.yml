@@ -59,7 +59,7 @@ jobs:
       - name: Fetch Public IP
         working-directory: terraform
         run: |
-          terraform output -json public_ips > ips.json
+          terraform output -json public_ip > ips.json
       # 9. Save private key
       - name: Save SSH Key
         run: |
@@ -71,7 +71,7 @@ jobs:
         run: |
           echo "[web]" > inventory.ini
           for ip in $(jq -r '.[]' terraform/ips.json); do
-           echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=key.pem" >> inventory.ini
+           echo "$ip ansible_user=ubuntu ansible_ssh_private_key_file=key.pem" >> inventory.ini
           done
 
       # 11. Wait for EC2 to be ready
