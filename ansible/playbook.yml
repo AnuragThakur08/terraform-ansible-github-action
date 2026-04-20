@@ -11,12 +11,24 @@
       apt:
         name: nginx
         state: present
+    - name: Enable Nginx status
+      copy:
+       dest: /etc/nginx/conf.d/status.conf
+       content: |
+        server {
+         listen 8080;
 
+        location /nginx_status {
+          stub_status;
+          allow 127.0.0.1;
+          deny all;
+        }
     - name: Start nginx
       service:
         name: nginx
         state: started
         enabled: true
+
 - name: Setup Monitoring Stack
   hosts: all
   become: yes
@@ -26,7 +38,24 @@
     - name: Update apt
       apt:
         update_cache: yes
+    - name: Download Nginx Exporter
+      get_url:
+       url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/latest/download/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
+       dest: /tmp/nginx_exporter.tar.gz
 
+    - name: Extract exporter
+      unarchive:
+       src: /tmp/nginx_exporter.tar.gz
+       dest: /tmp/
+       remote_src: yes
+
+    - name: Move exporter binary
+      command: mv /tmp/nginx-prometheus-exporter /usr/local/bin/
+
+    - name: Run Nginx exporter
+      shell: |
+        nohup nginx-prometheus-exporter \
+         -nginx.scrape-uri http://localhost:8080/nginx_status &
     # ------------------------
     # Install Node Exporter
     # ------------------------
