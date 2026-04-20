@@ -57,7 +57,6 @@ jobs:
 
       # 8. Get EC2 Public IP
       - name: Fetch Public IP
-        id: tf_output
         working-directory: terraform
         run: |
           terraform output -json public_ips > ips.json
