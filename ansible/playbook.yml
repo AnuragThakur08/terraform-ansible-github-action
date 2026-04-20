@@ -40,9 +40,8 @@
         update_cache: yes
     - name: Download Nginx Exporter
       get_url:
-       url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/latest/download/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
-       dest: /tmp/nginx_exporter.tar.gz
-
+        url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.3.0/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
+        dest: /tmp/nginx_exporter.tar.gz
     - name: Extract exporter
       unarchive:
        src: /tmp/nginx_exporter.tar.gz
