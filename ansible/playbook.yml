@@ -90,7 +90,7 @@
     - name: Configure Prometheus
       copy:
        dest: /etc/prometheus/prometheus.yml
-        content: |
+       content |
          global:
           scrape_interval: 15s
 
