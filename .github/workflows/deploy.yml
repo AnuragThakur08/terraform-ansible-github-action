@@ -60,6 +60,11 @@ jobs:
         working-directory: terraform
         run: |
           terraform output -json public_ip > ips.json
+      - name: Fetch Monitoring IP
+        working-directory: terraform
+        run: |
+           terraform output -raw monitor_ip > monitor_ip.txt
+
       # 9. Save private key
       - name: Save SSH Key
         run: |
@@ -73,6 +78,11 @@ jobs:
           for ip in $(jq -r '.[]' terraform/ips.json); do
            echo "$ip ansible_user=ubuntu ansible_ssh_private_key_file=key.pem" >> inventory.ini
           done
+
+
+          echo "[monitor]" >> inventory.ini
+          MONITOR_IP=$(cat terraform/monitor_ip.txt)
+          echo "$MONITOR_IP ansible_user=ubuntu ansible_ssh_private_key_file=key.pem" >> inventory.ini
 
       # 11. Wait for EC2 to be ready
       - name: Wait for EC2

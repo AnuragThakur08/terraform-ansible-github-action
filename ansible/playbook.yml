@@ -30,7 +30,7 @@
         enabled: true
 
 - name: Setup Monitoring Stack
-  hosts: all
+  hosts: web
   become: yes
 
   tasks:
@@ -69,52 +69,14 @@
         state: started
         enabled: yes
 
-    # ------------------------
-    # Install Prometheus
-    # ------------------------
-    - name: Install Prometheus
-      apt:
-        name: prometheus
-        state: present
-
-    - name: Configure Prometheus
-      copy:
-        dest: /etc/prometheus/prometheus.yml
-        content: |
-          global:
-            scrape_interval: 15s
-
-          scrape_configs:
-            - job_name: 'node'
-              static_configs:
-                - targets: ['localhost:9100']
-
-    - name: Restart Prometheus
-      service:
-        name: prometheus
-        state: restarted
-        enabled: yes
-
-    # ------------------------
-    # Install Grafana
-    # ------------------------
-    - name: Install dependencies
-      apt:
-        name: apt-transport-https
-        state: present
-
-    - name: Add Grafana GPG key
-      shell: |
-        wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
-
-    - name: Add Grafana repo
-      shell: |
-        echo "deb https://packages.grafana.com/oss/deb stable main" > /etc/apt/sources.list.d/grafana.list
-
+  
+- name: Configure Monitoring server
+  hosts: monitor
+  become: yes
+  tasks:
     - name: Update apt
       apt:
         update_cache: yes
-
     - name: Install Grafana
       apt:
         name: grafana
@@ -125,3 +87,29 @@
         name: grafana-server
         state: started
         enabled: yes
+    - name: Configure Prometheus
+      copy:
+       dest: /etc/prometheus/prometheus.yml
+        content: |
+         global:
+          scrape_interval: 15s
+
+          scrape_configs:
+            - job_name: 'nodes'
+              static_configs:
+               - targets:
+{% for host in groups['web'] %}
+              - '{{ host }}:9100'
+{% endfor %}
+        
+           - job_name: 'nginx'
+             static_configs:
+              - targets:
+{% for host in groups['app'] %}
+                  - '{{ host }}:9113'
+{% endfor %}
+      - name: Restart Prometheus
+        service:
+          name: prometheus
+          state: Restarted
+          enabled: yes

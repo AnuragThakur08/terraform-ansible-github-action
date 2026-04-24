@@ -74,3 +74,14 @@ resource "aws_instance" "web" {
     Name = "tf-ansible-demo"
   }
 }
+resource "aws_instance" "monitor"{
+  ami       = data.aws.ami.ubuntu.id
+  instance_type = t3.micro
+  key_name = var.key_name
+
+    vpc_security_group_ids = [aws_security_group.web_sg.id]
+
+  tags = {
+    Name = "monitoring-node"
+  }
+}
