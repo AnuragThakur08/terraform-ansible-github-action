@@ -107,6 +107,10 @@
        name: grafana-server
        state: started
        enabled: yes
+    - name: Install Prometheus
+      apt:
+        name: prometheus
+        state: present
     - name: Configure Prometheus
       template:
        src: prometheus.yml.j2
