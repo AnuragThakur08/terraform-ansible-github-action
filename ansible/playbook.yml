@@ -79,12 +79,12 @@
         update_cache: yes
     - name: Install dependencies
       apt:
-      name:
-      - apt-transport-https
-      - software-properties-common
-      - wget
-      state: present
-      update_cache: yes
+       name:
+       - apt-transport-https
+       - software-properties-common
+       - wget
+       state: present
+       update_cache: yes
     - name: Add Grafana GPG key
       shell: |
        mkdir -p /etc/apt/keyrings
@@ -99,8 +99,8 @@
 
     - name: Install Grafana
       apt:
-      name: grafana
-      state: present
+       name: grafana
+       state: present
 
     - name: Start Grafana
       service:
