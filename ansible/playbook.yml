@@ -99,13 +99,13 @@
               static_configs:
                - targets:
 {% for host in groups['web'] %}
-              - '{{ host }}:9100'
+                - '{{ host }}:9100'
 {% endfor %}
         
            - job_name: 'nginx'
              static_configs:
               - targets:
-{% for host in groups['app'] %}
+{% for host in groups['web'] %}
                   - '{{ host }}:9113'
 {% endfor %}
       - name: Restart Prometheus
