@@ -74,7 +74,7 @@ resource "aws_instance" "web" {
     Name = "tf-ansible-demo"
   }
 }
-resource "aws_instance" "monitor"{
+resource "aws_instance" "monitor" {
   ami       = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   key_name = var.key_name
