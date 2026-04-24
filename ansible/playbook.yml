@@ -88,28 +88,12 @@
         state: started
         enabled: yes
     - name: Configure Prometheus
-      copy:
+      template:
+       src: prometheus.yml.j2
        dest: /etc/prometheus/prometheus.yml
-       content: |
-         global:
-          scrape_interval: 15s
-
-          scrape_configs:
-            - job_name: 'nodes'
-              static_configs:
-               - targets:
-  {% for host in groups['web'] %}
-                - '{{ host }}:9100'
-  {% endfor %}
-        
-           - job_name: 'nginx'
-             static_configs:
-              - targets:
-  {% for host in groups['web'] %}
-                  - '{{ host }}:9113'
-  {% endfor %}
-      - name: Restart Prometheus
-        service:
-          name: prometheus
-          state: Restarted
-          enabled: yes
+       
+    - name: Restart Prometheus
+      service:
+       name: prometheus
+       state: Restarted
+       enabled: yes
