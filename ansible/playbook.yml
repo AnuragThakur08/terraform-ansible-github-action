@@ -87,8 +87,8 @@
       update_cache: yes
     - name: Add Grafana GPG key
       shell: |
-      mkdir -p /etc/apt/keyrings
-      wget -q -O - https://packages.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+       mkdir -p /etc/apt/keyrings
+       wget -q -O - https://packages.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
 
     - name: Add Grafana repository
       shell: |
