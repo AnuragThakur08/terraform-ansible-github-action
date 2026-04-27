@@ -119,5 +119,5 @@
     - name: Restart Prometheus
       service:
        name: prometheus
-       state: Restarted
+       state: restarted
        enabled: yes
