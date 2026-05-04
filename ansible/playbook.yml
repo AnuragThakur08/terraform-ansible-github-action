@@ -1,3 +1,6 @@
+# ============================
+# WEB NODES (NGINX + EXPORTERS)
+# ============================
 - name: Configure EC2
   hosts: web
   become: yes
@@ -11,53 +14,28 @@
       apt:
         name: nginx
         state: present
+
     - name: Enable Nginx status
       copy:
-       dest: /etc/nginx/conf.d/status.conf
-       content: |
-        server {
-         listen 8080;
+        dest: /etc/nginx/conf.d/status.conf
+        content: |
+          server {
+            listen 8080;
 
-        location /nginx_status {
-          stub_status;
-          allow 127.0.0.1;
-          deny all;
-        }
-    - name: Start nginx
+            location /nginx_status {
+              stub_status;
+              allow 127.0.0.1;
+              deny all;
+            }
+          }
+
+    - name: Restart nginx
       service:
         name: nginx
-        state: started
-        enabled: true
+        state: restarted
+        enabled: yes
 
-- name: Setup Monitoring Stack
-  hosts: web
-  become: yes
-
-  tasks:
-
-    - name: Update apt
-      apt:
-        update_cache: yes
-    - name: Download Nginx Exporter
-      get_url:
-        url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.3.0/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
-        dest: /tmp/nginx_exporter.tar.gz
-    - name: Extract exporter
-      unarchive:
-       src: /tmp/nginx_exporter.tar.gz
-       dest: /tmp/
-       remote_src: yes
-
-    - name: Move exporter binary
-      command: mv /tmp/nginx-prometheus-exporter /usr/local/bin/
-
-    - name: Run Nginx exporter
-      shell: |
-        nohup nginx-prometheus-exporter \
-         -nginx.scrape-uri http://localhost:8080/nginx_status &
-    # ------------------------
-    # Install Node Exporter
-    # ------------------------
+    # Node Exporter
     - name: Install Node Exporter
       apt:
         name: prometheus-node-exporter
@@ -69,55 +47,105 @@
         state: started
         enabled: yes
 
-  
+    # Nginx Exporter
+    - name: Download Nginx Exporter
+      get_url:
+        url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.3.0/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
+        dest: /tmp/nginx_exporter.tar.gz
+
+    - name: Extract exporter
+      unarchive:
+        src: /tmp/nginx_exporter.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Move exporter binary
+      command: mv /tmp/nginx-prometheus-exporter /usr/local/bin/
+
+    - name: Run Nginx exporter
+      shell: |
+        nohup nginx-prometheus-exporter \
+        -nginx.scrape-uri http://localhost:8080/nginx_status &
+      args:
+        creates: /usr/local/bin/nginx-prometheus-exporter
+
+
+# ============================
+# MONITOR NODE (PROMETHEUS + GRAFANA)
+# ============================
 - name: Configure Monitoring server
   hosts: monitor
   become: yes
+  serial: 1
+
   tasks:
     - name: Update apt
       apt:
         update_cache: yes
+
     - name: Install dependencies
       apt:
-       name:
-       - apt-transport-https
-       - software-properties-common
-       - wget
-       state: present
-       update_cache: yes
-    - name: Add Grafana GPG key
-      shell: |
-       mkdir -p /etc/apt/keyrings
-       wget -q -O - https://packages.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+        name:
+          - apt-transport-https
+          - software-properties-common
+          - wget
+          - gnupg
+        state: present
+        update_cache: yes
 
-    - name: Add Grafana repository
-      shell: |
-       echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://packages.grafana.com/oss/deb stable main" > /etc/apt/sources.list.d/grafana.list
+    - name: Ensure keyrings directory exists
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+
+    - name: Download Grafana key
+      get_url:
+        url: https://packages.grafana.com/gpg.key
+        dest: /tmp/grafana.key
+
+    - name: Convert GPG key
+      command: gpg --dearmor -o /etc/apt/keyrings/grafana.gpg /tmp/grafana.key
+      args:
+        creates: /etc/apt/keyrings/grafana.gpg
+
+    - name: Add Grafana repo
+      copy:
+        dest: /etc/apt/sources.list.d/grafana.list
+        content: |
+          deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://packages.grafana.com/oss/deb stable main
+
     - name: Update apt cache
       apt:
-       update_cache: yes
+        update_cache: yes
 
     - name: Install Grafana
       apt:
-       name: grafana
-       state: present
+        name: grafana
+        state: present
 
     - name: Start Grafana
       service:
-       name: grafana-server
-       state: started
-       enabled: yes
+        name: grafana-server
+        state: started
+        enabled: yes
+
     - name: Install Prometheus
       apt:
         name: prometheus
         state: present
+
+    - name: Ensure Prometheus dir exists
+      file:
+        path: /etc/prometheus
+        state: directory
+
     - name: Configure Prometheus
       template:
-       src: prometheus.yml.j2
-       dest: /etc/prometheus/prometheus.yml
-       
+        src: prometheus.yml.j2
+        dest: /etc/prometheus/prometheus.yml
+
     - name: Restart Prometheus
       service:
-       name: prometheus
-       state: restarted
-       enabled: yes
+        name: prometheus
+        state: restarted
+        enabled: yes
