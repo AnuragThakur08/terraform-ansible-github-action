@@ -39,62 +39,62 @@
 # NGINX EXPORTER (PRODUCTION READY)
 # =========================
 
-- name: Download Nginx Exporter
-  get_url:
-    url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.3.0/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
-    dest: /tmp/nginx_exporter.tar.gz
+    - name: Download Nginx Exporter
+      get_url:
+        url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.3.0/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
+        dest: /tmp/nginx_exporter.tar.gz
 
-- name: Extract Nginx Exporter
-  unarchive:
-    src: /tmp/nginx_exporter.tar.gz
-    dest: /tmp/
-    remote_src: yes
+    - name: Extract Nginx Exporter
+      unarchive:
+        src: /tmp/nginx_exporter.tar.gz
+        dest: /tmp/
+        remote_src: yes
 
-- name: Move exporter binary
-  copy:
-    src: /tmp/nginx-prometheus-exporter
-    dest: /usr/local/bin/nginx-prometheus-exporter
-    mode: '0755'
-    remote_src: yes
+    - name: Move exporter binary
+      copy:
+        src: /tmp/nginx-prometheus-exporter
+        dest: /usr/local/bin/nginx-prometheus-exporter
+        mode: '0755'
+        remote_src: yes
 
-# -------------------------
-# CREATE SYSTEMD SERVICE
-# -------------------------
+    # -------------------------
+    # CREATE SYSTEMD SERVICE
+    # -------------------------
 
-- name: Create nginx exporter service
-  copy:
-    dest: /etc/systemd/system/nginx_exporter.service
-    content: |
-      [Unit]
-      Description=Nginx Prometheus Exporter
-      After=network.target
+    - name: Create nginx exporter service
+      copy:
+        dest: /etc/systemd/system/nginx_exporter.service
+        content: |
+          [Unit]
+          Description=Nginx Prometheus Exporter
+          After=network.target
 
-      [Service]
-      ExecStart=/usr/local/bin/nginx-prometheus-exporter \
-        -nginx.scrape-uri http://localhost:8080/nginx_status
-      Restart=always
-      RestartSec=5
+          [Service]
+          ExecStart=/usr/local/bin/nginx-prometheus-exporter \
+            -nginx.scrape-uri http://localhost:8080/nginx_status
+          Restart=always
+          RestartSec=5
 
-      [Install]
-      WantedBy=multi-user.target
+          [Install]
+          WantedBy=multi-user.target
 
-# -------------------------
-# ENABLE + START SERVICE
-# -------------------------
+    # -------------------------
+    # ENABLE + START SERVICE
+    # -------------------------
 
-- name: Reload systemd
-  systemd:
-    daemon_reload: yes
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
 
-- name: Enable nginx exporter
-  systemd:
-    name: nginx_exporter
-    enabled: yes
+    - name: Enable nginx exporter
+      systemd:
+        name: nginx_exporter
+        enabled: yes
 
-- name: Start nginx exporter
-  systemd:
-    name: nginx_exporter
-    state: started
+    - name: Start nginx exporter
+      systemd:
+        name: nginx_exporter
+        state: started
 
 
 
