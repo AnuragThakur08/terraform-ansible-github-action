@@ -35,39 +35,67 @@
         state: restarted
         enabled: yes
 
-    # Node Exporter
-    - name: Install Node Exporter
-      apt:
-        name: prometheus-node-exporter
-        state: present
+    # =========================
+# NGINX EXPORTER (PRODUCTION READY)
+# =========================
 
-    - name: Start Node Exporter
-      service:
-        name: prometheus-node-exporter
-        state: started
-        enabled: yes
+- name: Download Nginx Exporter
+  get_url:
+    url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.3.0/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
+    dest: /tmp/nginx_exporter.tar.gz
 
-    # Nginx Exporter
-    - name: Download Nginx Exporter
-      get_url:
-        url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.3.0/nginx-prometheus-exporter_1.3.0_linux_amd64.tar.gz
-        dest: /tmp/nginx_exporter.tar.gz
+- name: Extract Nginx Exporter
+  unarchive:
+    src: /tmp/nginx_exporter.tar.gz
+    dest: /tmp/
+    remote_src: yes
 
-    - name: Extract exporter
-      unarchive:
-        src: /tmp/nginx_exporter.tar.gz
-        dest: /tmp/
-        remote_src: yes
+- name: Move exporter binary
+  copy:
+    src: /tmp/nginx-prometheus-exporter
+    dest: /usr/local/bin/nginx-prometheus-exporter
+    mode: '0755'
+    remote_src: yes
 
-    - name: Move exporter binary
-      command: mv /tmp/nginx-prometheus-exporter /usr/local/bin/
+# -------------------------
+# CREATE SYSTEMD SERVICE
+# -------------------------
 
-    - name: Run Nginx exporter
-      shell: |
-        nohup nginx-prometheus-exporter \
-        -nginx.scrape-uri http://localhost:8080/nginx_status &
-      args:
-        creates: /usr/local/bin/nginx-prometheus-exporter
+- name: Create nginx exporter service
+  copy:
+    dest: /etc/systemd/system/nginx_exporter.service
+    content: |
+      [Unit]
+      Description=Nginx Prometheus Exporter
+      After=network.target
+
+      [Service]
+      ExecStart=/usr/local/bin/nginx-prometheus-exporter \
+        -nginx.scrape-uri http://localhost:8080/nginx_status
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+
+# -------------------------
+# ENABLE + START SERVICE
+# -------------------------
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable nginx exporter
+  systemd:
+    name: nginx_exporter
+    enabled: yes
+
+- name: Start nginx exporter
+  systemd:
+    name: nginx_exporter
+    state: started
+
 
 
 # ============================
